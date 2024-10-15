@@ -1,5 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const {
+  register,
+  login,
+  logout,
+  getMe,
+  updateProfile,
+  changePassword,
+  refreshToken
+} = require('../controllers/authController');
+const { authenticate } = require('../middleware/auth');
+const {
+  validateRegistration,
+  validateLogin,
+  validateProfileUpdate,
+  validatePasswordChange
+} = require('../middleware/validation');
 
 /**
  * @swagger
@@ -86,9 +102,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.post('/register', (req, res) => {
-  res.status(501).json({ message: 'Register endpoint - to be implemented' });
-});
+router.post('/register', validateRegistration, register);
 
 /**
  * @swagger
@@ -119,9 +133,7 @@ router.post('/register', (req, res) => {
  *       500:
  *         description: Server error
  */
-router.post('/login', (req, res) => {
-  res.status(501).json({ message: 'Login endpoint - to be implemented' });
-});
+router.post('/login', validateLogin, login);
 
 /**
  * @swagger
@@ -137,9 +149,7 @@ router.post('/login', (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.post('/logout', (req, res) => {
-  res.status(501).json({ message: 'Logout endpoint - to be implemented' });
-});
+router.post('/logout', authenticate, logout);
 
 /**
  * @swagger
@@ -155,8 +165,9 @@ router.post('/logout', (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.get('/me', (req, res) => {
-  res.status(501).json({ message: 'Get profile endpoint - to be implemented' });
-});
+router.get('/me', authenticate, getMe);
+router.put('/profile', authenticate, validateProfileUpdate, updateProfile);
+router.put('/change-password', authenticate, validatePasswordChange, changePassword);
+router.post('/refresh', refreshToken);
 
 module.exports = router;
