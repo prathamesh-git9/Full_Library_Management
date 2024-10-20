@@ -1,5 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const {
+  getBooks,
+  getBookById,
+  createBook,
+  updateBook,
+  deleteBook,
+  getPopularBooks,
+  getRecentlyAddedBooks,
+  getBookStats,
+  searchBooks
+} = require('../controllers/bookController');
+const { authenticate, requireAdmin, requireAdminOrLibrarian } = require('../middleware/auth');
+const {
+  validateBook,
+  validateBookUpdate,
+  validateBookQuery,
+  validateBookSearch
+} = require('../middleware/bookValidation');
 
 /**
  * @swagger
@@ -117,9 +135,11 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/', (req, res) => {
-  res.status(501).json({ message: 'Get books endpoint - to be implemented' });
-});
+router.get('/', validateBookQuery, getBooks);
+router.get('/popular', getPopularBooks);
+router.get('/recent', getRecentlyAddedBooks);
+router.get('/search', validateBookSearch, searchBooks);
+router.get('/stats', authenticate, requireAdminOrLibrarian, getBookStats);
 
 /**
  * @swagger
@@ -140,9 +160,7 @@ router.get('/', (req, res) => {
  *       404:
  *         description: Book not found
  */
-router.get('/:id', (req, res) => {
-  res.status(501).json({ message: 'Get book by ID endpoint - to be implemented' });
-});
+router.get('/:id', getBookById);
 
 /**
  * @swagger
@@ -168,9 +186,7 @@ router.get('/:id', (req, res) => {
  *       403:
  *         description: Forbidden (admin only)
  */
-router.post('/', (req, res) => {
-  res.status(501).json({ message: 'Create book endpoint - to be implemented' });
-});
+router.post('/', authenticate, requireAdminOrLibrarian, validateBook, createBook);
 
 /**
  * @swagger
@@ -205,9 +221,7 @@ router.post('/', (req, res) => {
  *       404:
  *         description: Book not found
  */
-router.put('/:id', (req, res) => {
-  res.status(501).json({ message: 'Update book endpoint - to be implemented' });
-});
+router.put('/:id', authenticate, requireAdminOrLibrarian, validateBookUpdate, updateBook);
 
 /**
  * @swagger
@@ -234,8 +248,6 @@ router.put('/:id', (req, res) => {
  *       404:
  *         description: Book not found
  */
-router.delete('/:id', (req, res) => {
-  res.status(501).json({ message: 'Delete book endpoint - to be implemented' });
-});
+router.delete('/:id', authenticate, requireAdmin, deleteBook);
 
 module.exports = router;
