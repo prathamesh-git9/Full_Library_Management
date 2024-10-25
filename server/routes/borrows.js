@@ -1,5 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const {
+  getBorrows,
+  getBorrowById,
+  borrowBook,
+  returnBook,
+  renewBook,
+  getUserBorrowHistory,
+  getOverdueBorrows,
+  getBorrowStats
+} = require('../controllers/borrowController');
+const { authenticate, requireAdmin, requireAdminOrLibrarian } = require('../middleware/auth');
+const {
+  validateBorrowBook,
+  validateReturnBook,
+  validateBorrowQuery,
+  validateUserBorrowHistory,
+  validateOverdueBorrows
+} = require('../middleware/borrowValidation');
 
 /**
  * @swagger
@@ -99,9 +117,10 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get('/', (req, res) => {
-  res.status(501).json({ message: 'Get borrows endpoint - to be implemented' });
-});
+router.get('/', authenticate, requireAdminOrLibrarian, validateBorrowQuery, getBorrows);
+router.get('/overdue', authenticate, requireAdminOrLibrarian, validateOverdueBorrows, getOverdueBorrows);
+router.get('/stats', authenticate, requireAdminOrLibrarian, getBorrowStats);
+router.get('/user/:userId', authenticate, validateUserBorrowHistory, getUserBorrowHistory);
 
 /**
  * @swagger
@@ -126,9 +145,7 @@ router.get('/', (req, res) => {
  *       404:
  *         description: Borrow record not found
  */
-router.get('/:id', (req, res) => {
-  res.status(501).json({ message: 'Get borrow by ID endpoint - to be implemented' });
-});
+router.get('/:id', authenticate, getBorrowById);
 
 /**
  * @swagger
@@ -160,9 +177,7 @@ router.get('/:id', (req, res) => {
  *       409:
  *         description: User already has this book borrowed
  */
-router.post('/', (req, res) => {
-  res.status(501).json({ message: 'Borrow book endpoint - to be implemented' });
-});
+router.post('/', authenticate, validateBorrowBook, borrowBook);
 
 /**
  * @swagger
@@ -189,9 +204,7 @@ router.post('/', (req, res) => {
  *       400:
  *         description: Book already returned
  */
-router.post('/:id/return', (req, res) => {
-  res.status(501).json({ message: 'Return book endpoint - to be implemented' });
-});
+router.post('/:id/return', authenticate, validateReturnBook, returnBook);
 
 /**
  * @swagger
@@ -218,8 +231,6 @@ router.post('/:id/return', (req, res) => {
  *       400:
  *         description: Cannot renew (max renewals reached or overdue)
  */
-router.post('/:id/renew', (req, res) => {
-  res.status(501).json({ message: 'Renew book endpoint - to be implemented' });
-});
+router.post('/:id/renew', authenticate, renewBook);
 
 module.exports = router;
