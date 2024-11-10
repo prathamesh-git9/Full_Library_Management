@@ -1,5 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const {
+  getNotifications,
+  getNotificationById,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  createNotification,
+  getNotificationStats,
+  sendDueDateReminders,
+  sendOverdueNotices
+} = require('../controllers/notificationController');
+const { authenticate, requireAdmin, requireAdminOrLibrarian } = require('../middleware/auth');
 
 /**
  * @swagger
@@ -86,9 +98,10 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get('/', (req, res) => {
-  res.status(501).json({ message: 'Get notifications endpoint - to be implemented' });
-});
+router.get('/', authenticate, getNotifications);
+router.get('/stats', authenticate, requireAdminOrLibrarian, getNotificationStats);
+router.post('/send-due-reminders', authenticate, requireAdminOrLibrarian, sendDueDateReminders);
+router.post('/send-overdue-notices', authenticate, requireAdminOrLibrarian, sendOverdueNotices);
 
 /**
  * @swagger
@@ -113,9 +126,7 @@ router.get('/', (req, res) => {
  *       404:
  *         description: Notification not found
  */
-router.get('/:id', (req, res) => {
-  res.status(501).json({ message: 'Get notification by ID endpoint - to be implemented' });
-});
+router.get('/:id', authenticate, getNotificationById);
 
 /**
  * @swagger
@@ -140,9 +151,7 @@ router.get('/:id', (req, res) => {
  *       404:
  *         description: Notification not found
  */
-router.patch('/:id/read', (req, res) => {
-  res.status(501).json({ message: 'Mark notification as read endpoint - to be implemented' });
-});
+router.patch('/:id/read', authenticate, markAsRead);
 
 /**
  * @swagger
@@ -158,9 +167,7 @@ router.patch('/:id/read', (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.patch('/read-all', (req, res) => {
-  res.status(501).json({ message: 'Mark all notifications as read endpoint - to be implemented' });
-});
+router.patch('/read-all', authenticate, markAllAsRead);
 
 /**
  * @swagger
@@ -185,8 +192,7 @@ router.patch('/read-all', (req, res) => {
  *       404:
  *         description: Notification not found
  */
-router.delete('/:id', (req, res) => {
-  res.status(501).json({ message: 'Delete notification endpoint - to be implemented' });
-});
+router.delete('/:id', authenticate, deleteNotification);
+router.post('/', authenticate, requireAdminOrLibrarian, createNotification);
 
 module.exports = router;

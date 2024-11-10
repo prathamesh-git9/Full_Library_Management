@@ -1,25 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getCommentsByBook,
-  getUserComments,
-  createComment,
-  updateComment,
-  deleteComment,
-  likeComment,
-  dislikeComment,
-  removeReaction,
-  addReply,
-  getCommentStats,
-  getRatingDistribution
+    getCommentsByBook,
+    getUserComments,
+    createComment,
+    updateComment,
+    deleteComment,
+    likeComment,
+    dislikeComment,
+    removeReaction,
+    addReply,
+    getCommentStats,
+    getRatingDistribution
 } = require('../controllers/commentController');
 const { authenticate, requireAdmin, requireAdminOrLibrarian } = require('../middleware/auth');
 const {
-  validateCreateComment,
-  validateUpdateComment,
-  validateReply,
-  validateCommentQuery,
-  validateUserCommentsQuery
+    validateCreateComment,
+    validateUpdateComment,
+    validateReply,
+    validateCommentQuery,
+    validateUserCommentsQuery
 } = require('../middleware/commentValidation');
 
 /**

@@ -104,6 +104,7 @@ app.use('/api/borrows', require('./server/routes/borrows'));
 app.use('/api/reservations', require('./server/routes/reservations'));
 app.use('/api/notifications', require('./server/routes/notifications'));
 app.use('/api/comments', require('./server/routes/comments'));
+app.use('/api/dashboard', require('./server/routes/dashboard'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
