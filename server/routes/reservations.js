@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const Reservation = require('../models/Reservation');
+const Book = require('../models/Book');
+const { authenticate, requireAdminOrLibrarian } = require('../middleware/auth');
+const { validationResult } = require('express-validator');
 
 /**
  * @swagger
@@ -90,8 +94,51 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get('/', (req, res) => {
-  res.status(501).json({ message: 'Get reservations endpoint - to be implemented' });
+// @desc    Get all reservations
+// @route   GET /api/reservations
+// @access  Private (Admin/Librarian only)
+router.get('/', authenticate, requireAdminOrLibrarian, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    const filter = { isActive: true };
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.user) filter.user = req.query.user;
+    if (req.query.book) filter.book = req.query.book;
+    
+    const reservations = await Reservation.find(filter)
+      .populate('user', 'firstName lastName email studentId')
+      .populate('book', 'title author isbn coverImage')
+      .populate('fulfilledBy', 'firstName lastName email')
+      .sort({ reservationDate: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    const total = await Reservation.countDocuments(filter);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        reservations,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalReservations: total,
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get reservations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reservations',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
 });
 
 /**
@@ -117,8 +164,41 @@ router.get('/', (req, res) => {
  *       404:
  *         description: Reservation not found
  */
-router.get('/:id', (req, res) => {
-  res.status(501).json({ message: 'Get reservation by ID endpoint - to be implemented' });
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const reservation = await Reservation.findById(req.params.id)
+      .populate('user', 'firstName lastName email studentId')
+      .populate('book', 'title author isbn coverImage')
+      .populate('fulfilledBy', 'firstName lastName email');
+    
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reservation not found'
+      });
+    }
+    
+    // Check if user can access this reservation
+    if (req.user.role !== 'admin' && req.user.role !== 'librarian' && 
+        reservation.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: { reservation }
+    });
+  } catch (error) {
+    console.error('Get reservation by ID error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reservation',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
 });
 
 /**
@@ -151,8 +231,59 @@ router.get('/:id', (req, res) => {
  *       409:
  *         description: User already has an active reservation for this book
  */
-router.post('/', (req, res) => {
-  res.status(501).json({ message: 'Create reservation endpoint - to be implemented' });
+router.post('/', authenticate, async (req, res) => {
+  try {
+    const { bookId } = req.body;
+    const userId = req.user._id;
+    
+    if (!bookId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Book ID is required'
+      });
+    }
+    
+    const reservation = await Reservation.createReservation(userId, bookId);
+    
+    const populatedReservation = await Reservation.findById(reservation._id)
+      .populate('user', 'firstName lastName email studentId')
+      .populate('book', 'title author isbn coverImage');
+    
+    res.status(201).json({
+      success: true,
+      message: 'Reservation created successfully',
+      data: { reservation: populatedReservation }
+    });
+  } catch (error) {
+    console.error('Create reservation error:', error);
+    
+    if (error.message === 'Book not found') {
+      return res.status(404).json({
+        success: false,
+        message: 'Book not found'
+      });
+    }
+    
+    if (error.message === 'Book is available for immediate borrowing') {
+      return res.status(400).json({
+        success: false,
+        message: 'Book is available for immediate borrowing'
+      });
+    }
+    
+    if (error.message === 'User already has an active reservation for this book') {
+      return res.status(409).json({
+        success: false,
+        message: 'You already have an active reservation for this book'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create reservation',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
 });
 
 /**
@@ -180,8 +311,68 @@ router.post('/', (req, res) => {
  *       400:
  *         description: Cannot cancel (reservation already fulfilled or expired)
  */
-router.delete('/:id', (req, res) => {
-  res.status(501).json({ message: 'Cancel reservation endpoint - to be implemented' });
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const reservation = await Reservation.findById(req.params.id);
+    
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reservation not found'
+      });
+    }
+    
+    // Check if user can cancel this reservation
+    if (req.user.role !== 'admin' && req.user.role !== 'librarian' && 
+        reservation.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+    
+    if (reservation.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only active reservations can be cancelled'
+      });
+    }
+    
+    reservation.cancelReservation();
+    await reservation.save();
+    
+    // Update book statistics
+    const book = await Book.findById(reservation.book);
+    if (book) {
+      book.cancelReservation();
+      await book.save();
+    }
+    
+    // Update priorities for remaining reservations
+    await Reservation.updateMany(
+      {
+        book: reservation.book,
+        status: 'active',
+        isActive: true,
+        priority: { $gt: reservation.priority }
+      },
+      {
+        $inc: { priority: -1 }
+      }
+    );
+    
+    res.status(200).json({
+      success: true,
+      message: 'Reservation cancelled successfully'
+    });
+  } catch (error) {
+    console.error('Cancel reservation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel reservation',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
 });
 
 module.exports = router;
