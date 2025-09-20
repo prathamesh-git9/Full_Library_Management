@@ -102,12 +102,12 @@ router.get('/', authenticate, requireAdminOrLibrarian, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    
+
     const filter = { isActive: true };
     if (req.query.status) filter.status = req.query.status;
     if (req.query.user) filter.user = req.query.user;
     if (req.query.book) filter.book = req.query.book;
-    
+
     const reservations = await Reservation.find(filter)
       .populate('user', 'firstName lastName email studentId')
       .populate('book', 'title author isbn coverImage')
@@ -115,9 +115,9 @@ router.get('/', authenticate, requireAdminOrLibrarian, async (req, res) => {
       .sort({ reservationDate: -1 })
       .skip(skip)
       .limit(limit);
-    
+
     const total = await Reservation.countDocuments(filter);
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -170,23 +170,23 @@ router.get('/:id', authenticate, async (req, res) => {
       .populate('user', 'firstName lastName email studentId')
       .populate('book', 'title author isbn coverImage')
       .populate('fulfilledBy', 'firstName lastName email');
-    
+
     if (!reservation) {
       return res.status(404).json({
         success: false,
         message: 'Reservation not found'
       });
     }
-    
+
     // Check if user can access this reservation
-    if (req.user.role !== 'admin' && req.user.role !== 'librarian' && 
-        reservation.user._id.toString() !== req.user._id.toString()) {
+    if (req.user.role !== 'admin' && req.user.role !== 'librarian' &&
+      reservation.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Access denied'
       });
     }
-    
+
     res.status(200).json({
       success: true,
       data: { reservation }
@@ -235,20 +235,20 @@ router.post('/', authenticate, async (req, res) => {
   try {
     const { bookId } = req.body;
     const userId = req.user._id;
-    
+
     if (!bookId) {
       return res.status(400).json({
         success: false,
         message: 'Book ID is required'
       });
     }
-    
+
     const reservation = await Reservation.createReservation(userId, bookId);
-    
+
     const populatedReservation = await Reservation.findById(reservation._id)
       .populate('user', 'firstName lastName email studentId')
       .populate('book', 'title author isbn coverImage');
-    
+
     res.status(201).json({
       success: true,
       message: 'Reservation created successfully',
@@ -256,28 +256,28 @@ router.post('/', authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error('Create reservation error:', error);
-    
+
     if (error.message === 'Book not found') {
       return res.status(404).json({
         success: false,
         message: 'Book not found'
       });
     }
-    
+
     if (error.message === 'Book is available for immediate borrowing') {
       return res.status(400).json({
         success: false,
         message: 'Book is available for immediate borrowing'
       });
     }
-    
+
     if (error.message === 'User already has an active reservation for this book') {
       return res.status(409).json({
         success: false,
         message: 'You already have an active reservation for this book'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Failed to create reservation',
@@ -314,40 +314,40 @@ router.post('/', authenticate, async (req, res) => {
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const reservation = await Reservation.findById(req.params.id);
-    
+
     if (!reservation) {
       return res.status(404).json({
         success: false,
         message: 'Reservation not found'
       });
     }
-    
+
     // Check if user can cancel this reservation
-    if (req.user.role !== 'admin' && req.user.role !== 'librarian' && 
-        reservation.user.toString() !== req.user._id.toString()) {
+    if (req.user.role !== 'admin' && req.user.role !== 'librarian' &&
+      reservation.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Access denied'
       });
     }
-    
+
     if (reservation.status !== 'active') {
       return res.status(400).json({
         success: false,
         message: 'Only active reservations can be cancelled'
       });
     }
-    
+
     reservation.cancelReservation();
     await reservation.save();
-    
+
     // Update book statistics
     const book = await Book.findById(reservation.book);
     if (book) {
       book.cancelReservation();
       await book.save();
     }
-    
+
     // Update priorities for remaining reservations
     await Reservation.updateMany(
       {
@@ -360,7 +360,7 @@ router.delete('/:id', authenticate, async (req, res) => {
         $inc: { priority: -1 }
       }
     );
-    
+
     res.status(200).json({
       success: true,
       message: 'Reservation cancelled successfully'

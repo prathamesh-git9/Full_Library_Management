@@ -19,68 +19,68 @@ import AdminReports from './pages/Admin/AdminReports'
 import NotFound from './pages/NotFound/NotFound'
 
 function App() {
-  const { user, isLoading } = useAuth()
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
+    const { user, isLoading } = useAuth()
+    const isAuthenticated = useSelector((state) => state.auth.isAuthenticated)
 
-  useEffect(() => {
-    // Initialize auth state
-  }, [])
+    useEffect(() => {
+        // Initialize auth state
+    }, [])
 
-  if (isLoading) {
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="loading-spinner h-8 w-8"></div>
+            </div>
+        )
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+        )
+    }
+
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="loading-spinner h-8 w-8"></div>
-      </div>
-    )
-  }
+        <Layout>
+            <Routes>
+                {/* Student Routes */}
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/books" element={<Books />} />
+                <Route path="/books/:id" element={<BookDetail />} />
+                <Route path="/borrows" element={<Borrows />} />
+                <Route path="/reservations" element={<Reservations />} />
+                <Route path="/profile" element={<Profile />} />
 
-  if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    )
-  }
+                {/* Admin Routes */}
+                {user?.role === 'admin' && (
+                    <>
+                        <Route path="/admin" element={<AdminDashboard />} />
+                        <Route path="/admin/users" element={<AdminUsers />} />
+                        <Route path="/admin/books" element={<AdminBooks />} />
+                        <Route path="/admin/borrows" element={<AdminBorrows />} />
+                        <Route path="/admin/reports" element={<AdminReports />} />
+                    </>
+                )}
 
-  return (
-    <Layout>
-      <Routes>
-        {/* Student Routes */}
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/books" element={<Books />} />
-        <Route path="/books/:id" element={<BookDetail />} />
-        <Route path="/borrows" element={<Borrows />} />
-        <Route path="/reservations" element={<Reservations />} />
-        <Route path="/profile" element={<Profile />} />
-        
-        {/* Admin Routes */}
-        {user?.role === 'admin' && (
-          <>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/books" element={<AdminBooks />} />
-            <Route path="/admin/borrows" element={<AdminBorrows />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-          </>
-        )}
-        
-        {/* Librarian Routes */}
-        {user?.role === 'librarian' && (
-          <>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/books" element={<AdminBooks />} />
-            <Route path="/admin/borrows" element={<AdminBorrows />} />
-          </>
-        )}
-        
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
-    </Layout>
-  )
+                {/* Librarian Routes */}
+                {user?.role === 'librarian' && (
+                    <>
+                        <Route path="/admin" element={<AdminDashboard />} />
+                        <Route path="/admin/books" element={<AdminBooks />} />
+                        <Route path="/admin/borrows" element={<AdminBorrows />} />
+                    </>
+                )}
+
+                <Route path="/404" element={<NotFound />} />
+                <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
+        </Layout>
+    )
 }
 
 export default App

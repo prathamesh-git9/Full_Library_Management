@@ -68,6 +68,9 @@ app.use('/api/reservations', require('./server/routes/reservations'));
 app.use('/api/notifications', require('./server/routes/notifications'));
 app.use('/api/comments', require('./server/routes/comments'));
 app.use('/api/dashboard', require('./server/routes/dashboard'));
+app.use('/api/analytics', require('./server/routes/analytics'));
+app.use('/api/search', require('./server/routes/search'));
+app.use('/api/barcode', require('./server/routes/barcode'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

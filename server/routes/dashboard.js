@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getStudentDashboard,
-  getAdminDashboard,
-  getLibrarianDashboard,
-  getUserAnalytics
+    getStudentDashboard,
+    getAdminDashboard,
+    getLibrarianDashboard,
+    getUserAnalytics
 } = require('../controllers/dashboardController');
 const { authenticate, requireAdmin, requireAdminOrLibrarian, requireStudent } = require('../middleware/auth');
 

@@ -3,22 +3,22 @@ const config = require('../config');
 
 // Create transporter
 const createTransporter = () => {
-  return nodemailer.createTransporter({
-    host: config.EMAIL_HOST,
-    port: config.EMAIL_PORT,
-    secure: config.EMAIL_PORT === 465, // true for 465, false for other ports
-    auth: {
-      user: config.EMAIL_USER,
-      pass: config.EMAIL_PASS
-    }
-  });
+    return nodemailer.createTransporter({
+        host: config.EMAIL_HOST,
+        port: config.EMAIL_PORT,
+        secure: config.EMAIL_PORT === 465, // true for 465, false for other ports
+        auth: {
+            user: config.EMAIL_USER,
+            pass: config.EMAIL_PASS
+        }
+    });
 };
 
 // Email templates
 const emailTemplates = {
-  dueDateReminder: (userName, bookTitle, dueDate) => ({
-    subject: '📚 Book Due Date Reminder',
-    html: `
+    dueDateReminder: (userName, bookTitle, dueDate) => ({
+        subject: '📚 Book Due Date Reminder',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">📚 Library Management System</h1>
@@ -44,11 +44,11 @@ const emailTemplates = {
         </div>
       </div>
     `
-  }),
+    }),
 
-  overdueNotice: (userName, bookTitle, daysOverdue, fineAmount) => ({
-    subject: '🚨 Overdue Book Notice',
-    html: `
+    overdueNotice: (userName, bookTitle, daysOverdue, fineAmount) => ({
+        subject: '🚨 Overdue Book Notice',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">🚨 Overdue Notice</h1>
@@ -74,11 +74,11 @@ const emailTemplates = {
         </div>
       </div>
     `
-  }),
+    }),
 
-  reservationAvailable: (userName, bookTitle) => ({
-    subject: '📖 Reserved Book Available',
-    html: `
+    reservationAvailable: (userName, bookTitle) => ({
+        subject: '📖 Reserved Book Available',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #00b894 0%, #00a085 100%); padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">📖 Book Available</h1>
@@ -104,11 +104,11 @@ const emailTemplates = {
         </div>
       </div>
     `
-  }),
+    }),
 
-  welcomeEmail: (userName, role) => ({
-    subject: '🎉 Welcome to Library Management System',
-    html: `
+    welcomeEmail: (userName, role) => ({
+        subject: '🎉 Welcome to Library Management System',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">🎉 Welcome!</h1>
@@ -138,11 +138,11 @@ const emailTemplates = {
         </div>
       </div>
     `
-  }),
+    }),
 
-  passwordReset: (userName, resetLink) => ({
-    subject: '🔐 Password Reset Request',
-    html: `
+    passwordReset: (userName, resetLink) => ({
+        subject: '🔐 Password Reset Request',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%); padding: 20px; text-align: center;">
           <h1 style="color: white; margin: 0;">🔐 Password Reset</h1>
@@ -170,169 +170,169 @@ const emailTemplates = {
         </div>
       </div>
     `
-  })
+    })
 };
 
 // Send email function
 const sendEmail = async (to, template, data) => {
-  try {
-    const transporter = createTransporter();
-    const emailTemplate = emailTemplates[template](...data);
-    
-    const mailOptions = {
-      from: config.EMAIL_FROM,
-      to: to,
-      subject: emailTemplate.subject,
-      html: emailTemplate.html
-    };
-    
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', result.messageId);
-    return { success: true, messageId: result.messageId };
-  } catch (error) {
-    console.error('Email sending failed:', error);
-    return { success: false, error: error.message };
-  }
+    try {
+        const transporter = createTransporter();
+        const emailTemplate = emailTemplates[template](...data);
+
+        const mailOptions = {
+            from: config.EMAIL_FROM,
+            to: to,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html
+        };
+
+        const result = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', result.messageId);
+        return { success: true, messageId: result.messageId };
+    } catch (error) {
+        console.error('Email sending failed:', error);
+        return { success: false, error: error.message };
+    }
 };
 
 // Send bulk emails
 const sendBulkEmails = async (recipients, template, data) => {
-  const results = [];
-  
-  for (const recipient of recipients) {
-    const result = await sendEmail(recipient.email, template, [recipient.name, ...data]);
-    results.push({
-      email: recipient.email,
-      success: result.success,
-      error: result.error
-    });
-    
-    // Add delay between emails to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  
-  return results;
+    const results = [];
+
+    for (const recipient of recipients) {
+        const result = await sendEmail(recipient.email, template, [recipient.name, ...data]);
+        results.push({
+            email: recipient.email,
+            success: result.success,
+            error: result.error
+        });
+
+        // Add delay between emails to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    return results;
 };
 
 // Send due date reminders
 const sendDueDateReminders = async (borrows) => {
-  const results = [];
-  
-  for (const borrow of borrows) {
-    if (borrow.user.email && borrow.user.preferences?.notifications?.email) {
-      const result = await sendEmail(
-        borrow.user.email,
-        'dueDateReminder',
-        [borrow.user.firstName, borrow.book.title, borrow.dueDate]
-      );
-      
-      results.push({
-        borrowId: borrow._id,
-        userEmail: borrow.user.email,
-        success: result.success,
-        error: result.error
-      });
+    const results = [];
+
+    for (const borrow of borrows) {
+        if (borrow.user.email && borrow.user.preferences?.notifications?.email) {
+            const result = await sendEmail(
+                borrow.user.email,
+                'dueDateReminder',
+                [borrow.user.firstName, borrow.book.title, borrow.dueDate]
+            );
+
+            results.push({
+                borrowId: borrow._id,
+                userEmail: borrow.user.email,
+                success: result.success,
+                error: result.error
+            });
+        }
     }
-  }
-  
-  return results;
+
+    return results;
 };
 
 // Send overdue notices
 const sendOverdueNotices = async (overdueBorrows) => {
-  const results = [];
-  
-  for (const borrow of overdueBorrows) {
-    if (borrow.user.email && borrow.user.preferences?.notifications?.email) {
-      const daysOverdue = Math.ceil((new Date() - new Date(borrow.dueDate)) / (1000 * 60 * 60 * 24));
-      const fineAmount = daysOverdue * config.FINE_PER_DAY;
-      
-      const result = await sendEmail(
-        borrow.user.email,
-        'overdueNotice',
-        [borrow.user.firstName, borrow.book.title, daysOverdue, fineAmount]
-      );
-      
-      results.push({
-        borrowId: borrow._id,
-        userEmail: borrow.user.email,
-        success: result.success,
-        error: result.error
-      });
+    const results = [];
+
+    for (const borrow of overdueBorrows) {
+        if (borrow.user.email && borrow.user.preferences?.notifications?.email) {
+            const daysOverdue = Math.ceil((new Date() - new Date(borrow.dueDate)) / (1000 * 60 * 60 * 24));
+            const fineAmount = daysOverdue * config.FINE_PER_DAY;
+
+            const result = await sendEmail(
+                borrow.user.email,
+                'overdueNotice',
+                [borrow.user.firstName, borrow.book.title, daysOverdue, fineAmount]
+            );
+
+            results.push({
+                borrowId: borrow._id,
+                userEmail: borrow.user.email,
+                success: result.success,
+                error: result.error
+            });
+        }
     }
-  }
-  
-  return results;
+
+    return results;
 };
 
 // Send reservation available notifications
 const sendReservationAvailable = async (reservations) => {
-  const results = [];
-  
-  for (const reservation of reservations) {
-    if (reservation.user.email && reservation.user.preferences?.notifications?.email) {
-      const result = await sendEmail(
-        reservation.user.email,
-        'reservationAvailable',
-        [reservation.user.firstName, reservation.book.title]
-      );
-      
-      results.push({
-        reservationId: reservation._id,
-        userEmail: reservation.user.email,
-        success: result.success,
-        error: result.error
-      });
+    const results = [];
+
+    for (const reservation of reservations) {
+        if (reservation.user.email && reservation.user.preferences?.notifications?.email) {
+            const result = await sendEmail(
+                reservation.user.email,
+                'reservationAvailable',
+                [reservation.user.firstName, reservation.book.title]
+            );
+
+            results.push({
+                reservationId: reservation._id,
+                userEmail: reservation.user.email,
+                success: result.success,
+                error: result.error
+            });
+        }
     }
-  }
-  
-  return results;
+
+    return results;
 };
 
 // Send welcome email
 const sendWelcomeEmail = async (user) => {
-  if (user.email) {
-    return await sendEmail(
-      user.email,
-      'welcomeEmail',
-      [user.firstName, user.role]
-    );
-  }
-  return { success: false, error: 'No email address provided' };
+    if (user.email) {
+        return await sendEmail(
+            user.email,
+            'welcomeEmail',
+            [user.firstName, user.role]
+        );
+    }
+    return { success: false, error: 'No email address provided' };
 };
 
 // Send password reset email
 const sendPasswordResetEmail = async (user, resetLink) => {
-  if (user.email) {
-    return await sendEmail(
-      user.email,
-      'passwordReset',
-      [user.firstName, resetLink]
-    );
-  }
-  return { success: false, error: 'No email address provided' };
+    if (user.email) {
+        return await sendEmail(
+            user.email,
+            'passwordReset',
+            [user.firstName, resetLink]
+        );
+    }
+    return { success: false, error: 'No email address provided' };
 };
 
 // Test email configuration
 const testEmailConfiguration = async () => {
-  try {
-    const transporter = createTransporter();
-    await transporter.verify();
-    console.log('Email configuration is valid');
-    return { success: true, message: 'Email configuration is valid' };
-  } catch (error) {
-    console.error('Email configuration test failed:', error);
-    return { success: false, error: error.message };
-  }
+    try {
+        const transporter = createTransporter();
+        await transporter.verify();
+        console.log('Email configuration is valid');
+        return { success: true, message: 'Email configuration is valid' };
+    } catch (error) {
+        console.error('Email configuration test failed:', error);
+        return { success: false, error: error.message };
+    }
 };
 
 module.exports = {
-  sendEmail,
-  sendBulkEmails,
-  sendDueDateReminders,
-  sendOverdueNotices,
-  sendReservationAvailable,
-  sendWelcomeEmail,
-  sendPasswordResetEmail,
-  testEmailConfiguration
+    sendEmail,
+    sendBulkEmails,
+    sendDueDateReminders,
+    sendOverdueNotices,
+    sendReservationAvailable,
+    sendWelcomeEmail,
+    sendPasswordResetEmail,
+    testEmailConfiguration
 };

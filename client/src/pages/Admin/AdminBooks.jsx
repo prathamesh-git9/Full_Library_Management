@@ -1,10 +1,10 @@
 const AdminBooks = () => {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Book Management</h1>
-      <p className="text-sm text-gray-500">This page will allow admins and librarians to manage books.</p>
-    </div>
-  )
+    return (
+        <div className="space-y-6">
+            <h1 className="text-2xl font-bold text-gray-900">Book Management</h1>
+            <p className="text-sm text-gray-500">This page will allow admins and librarians to manage books.</p>
+        </div>
+    )
 }
 
 export default AdminBooks
